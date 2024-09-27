@@ -2,3 +2,5 @@ fastapi
 uvicorn
 pandas
 chromadb
+langchain_groq
+langchain_core
