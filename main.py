@@ -69,47 +69,48 @@ async def extractSkillsfromParagraph(page_data: str):
 # FastAPI route to query the collection using a POST request
 @app.post("/search")
 async def search(request: SearchRequest):
-    # Query the ChromaDB collection based on the input paragraph
     try:
         prompt_extract = PromptTemplate.from_template(
-        """
-        ### SCRAPED TEXT FROM WEBSITE:
-        {page_data}
-        ### INSTRUCTION:
-        This is a job description.
-        Your job is to extract the relevant skills mentioned in the job descriptions and return them in JSON format.
-        Each object in the JSON should have two keys: `role` and `skills`.
-        Only return the valid JSON.
-        ### VALID JSON (NO PREAMBLE):
-        """
+            """
+            ### SCRAPED TEXT FROM WEBSITE:
+            {page_data}
+            ### INSTRUCTION:
+            This is a job description.
+            Your job is to extract the relevant skills mentioned in the job descriptions and return them in JSON format.
+            Each object in the JSON should have two keys: `role` and `skills`.
+            Only return the valid JSON.
+            ### VALID JSON (NO PREAMBLE):
+            """
         )
+        
         chain_extract = prompt_extract | llm
-        res = chain_extract.invoke(input={'page_data':request.query_text})
+        res = chain_extract.invoke(input={'page_data': request.query_text})
+
+        # Log the raw output for debugging
+        print("Raw output from model:", res.content)
+
         json_parser = JsonOutputParser()
         json_res = json_parser.parse(res.content)
-        jobs = json_res
-        # Initialize an empty list to store all skills
-        all_skills = []
 
-        # Extract skills from each job role
-        for job in jobs:
-            all_skills.extend(job['skills'])  # Combine skills from each job role
+        # Check if json_res is a valid list or dict
+        if isinstance(json_res, dict) and 'skills' in json_res:
+            # Handle the case where json_res is a dict with skills
+            all_skills = json_res.get('skills', [])
+        elif isinstance(json_res, list):
+            # Handle the case where json_res is a list of jobs
+            all_skills = []
+            for job in json_res:
+                if isinstance(job, dict) and 'skills' in job:
+                    all_skills.extend(job['skills'])
+        else:
+            raise ValueError("Expected a list or dict but got: {}".format(type(json_res)))
 
         # Make the query using the list of skills
         links = collection.query(query_texts=all_skills, n_results=2).get('metadatas', [])
-        # job['skills']
-        # Query using the list of skills
-        # links = collection.query(query_texts=job['skills'], n_results=2)
 
         return links
-
-        # res = await extractSkillsfromParagraph(request.query_text)# Only take the first 10 skills
-        # print(res)
-        # links = collection.query(query_texts=res, n_results=2).get('metadatas', [])
-        # return {"links": links}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during search: {str(e)}")
-
 
 # FastAPI route to add new data to the collection (optional)
 @app.post("/add")
