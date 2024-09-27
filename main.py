@@ -35,6 +35,36 @@ if not collection.count():
 class SearchRequest(BaseModel):
     query_text: str
 
+async def extractSkillsfromParagraph(page_data: str):
+    prompt_extract = PromptTemplate.from_template(
+        """
+        ### SCRAPED TEXT FROM WEBSITE:
+        {page_data}
+        ### INSTRUCTION:
+        This is a job description.
+        Your job is to extract the relevant skills mentioned in the job descriptions and return them in JSON format.
+        Each object in the JSON should have two keys: `role` and `skills`.
+        Only return the valid JSON.
+        ### VALID JSON (NO PREAMBLE):
+        """
+    )
+
+    # Simulate async LLM invocation (if needed, adjust this for actual async API calls)
+    chain_extract = prompt_extract | llm
+    res = chain_extract.invoke, input={'page_data': page_data}
+    
+    # Parse the result
+    json_parser = JsonOutputParser()
+    json_res = json_parser.parse(res.content)
+    
+    # Extract skills from the JSON output
+    job = json_res
+    if not json_res or not isinstance(json_res, list):
+        raise ValueError("Invalid JSON format or no data found.")
+    skills = json_res[0].get('skills', [])
+    return skills
+
+
 
 # FastAPI route to query the collection using a POST request
 @app.post("/search")
@@ -53,15 +83,30 @@ async def search(request: SearchRequest):
         ### VALID JSON (NO PREAMBLE):
         """
         )
-        page_data = request.query_text
         chain_extract = prompt_extract | llm
-        res = chain_extract.invoke(input={'page_data':page_data})
+        res = chain_extract.invoke(input={'page_data':request.query_text})
         json_parser = JsonOutputParser()
         json_res = json_parser.parse(res.content)
-        job = json_res
-        skills = job[0].get('skills', [])
-        links = collection.query(query_texts=skills, n_results=2).get('metadatas', [])
-        return {"links": links}
+        jobs = json_res
+        # Initialize an empty list to store all skills
+        all_skills = []
+
+        # Extract skills from each job role
+        for job in jobs:
+            all_skills.extend(job['skills'])  # Combine skills from each job role
+
+        # Make the query using the list of skills
+        links = collection.query(query_texts=all_skills, n_results=2).get('metadatas', [])
+        # job['skills']
+        # Query using the list of skills
+        # links = collection.query(query_texts=job['skills'], n_results=2)
+
+        return links
+
+        # res = await extractSkillsfromParagraph(request.query_text)# Only take the first 10 skills
+        # print(res)
+        # links = collection.query(query_texts=res, n_results=2).get('metadatas', [])
+        # return {"links": links}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during search: {str(e)}")
 
