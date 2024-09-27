@@ -41,6 +41,18 @@ class SearchRequest(BaseModel):
 async def search(request: SearchRequest):
     # Query the ChromaDB collection based on the input paragraph
     try:
+        prompt_extract = PromptTemplate.from_template(
+        """
+        ### SCRAPED TEXT FROM WEBSITE:
+        {page_data}
+        ### INSTRUCTION:
+        This is a job description.
+        Your job is to extract the relevant skills mentioned in the job descriptions and return them in JSON format.
+        Each object in the JSON should have two keys: `role` and `skills`.
+        Only return the valid JSON.
+        ### VALID JSON (NO PREAMBLE):
+        """
+        )
         page_data = request.query_text
         chain_extract = prompt_extract | llm
         res = chain_extract.invoke(input={'page_data':page_data})
