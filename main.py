@@ -3,7 +3,15 @@ from pydantic import BaseModel
 import pandas as pd
 import uuid
 import chromadb
+from langchain_groq import ChatGroq
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
 
+llm = ChatGroq(
+    temperature=0,
+    groq_api_key='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',
+    model_name="llama-3.1-70b-versatile"
+)
 # Initialize FastAPI
 app = FastAPI()
 
@@ -33,7 +41,14 @@ class SearchRequest(BaseModel):
 async def search(request: SearchRequest):
     # Query the ChromaDB collection based on the input paragraph
     try:
-        links = collection.query(query_texts=[request.query_text], n_results=2).get('metadatas', [])
+        page_data = request.query_text
+        chain_extract = prompt_extract | llm
+        res = chain_extract.invoke(input={'page_data':page_data})
+        json_parser = JsonOutputParser()
+        json_res = json_parser.parse(res.content)
+        job = json_res
+        skills = job[0].get('skills', [])
+        links = collection.query(query_texts=skills, n_results=2).get('metadatas', [])
         return {"links": links}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during search: {str(e)}")
