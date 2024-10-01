@@ -4,3 +4,4 @@ pandas
 chromadb
 langchain_groq
 langchain_core
+python-multipart
