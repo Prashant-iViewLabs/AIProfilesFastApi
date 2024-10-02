@@ -107,7 +107,7 @@ async def search(request: SearchRequest):
             all_skills.extend(job['skills'])  # Combine skills from each job role
 
         # Make the query using the list of skills
-        links = collection.query(query_texts=all_skills, n_results=2).get('metadatas', [])
+        links = collection.query(query_texts=all_skills).get('metadatas', [])
         # job['skills']
         # Query using the list of skills
         # links = collection.query(query_texts=job['skills'], n_results=2)
