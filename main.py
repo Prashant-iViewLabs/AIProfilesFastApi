@@ -46,36 +46,6 @@ class UpdateRequest(BaseModel):
     techstack: str
     links: str
 
-async def extractSkillsfromParagraph(page_data: str):
-    prompt_extract = PromptTemplate.from_template(
-        """
-        ### SCRAPED TEXT FROM WEBSITE:
-        {page_data}
-        ### INSTRUCTION:
-        This is a job description.
-        Your job is to extract the relevant skills mentioned in the job descriptions and return them in JSON format.
-        Each object in the JSON should have two keys: `role` and `skills`.
-        Only return the valid JSON.
-        ### VALID JSON (NO PREAMBLE):
-        """
-    )
-
-    # Simulate async LLM invocation (if needed, adjust this for actual async API calls)
-    chain_extract = prompt_extract | llm
-    res = chain_extract.invoke(input={'page_data': page_data})
-    
-    # Parse the result
-    json_parser = JsonOutputParser()
-    json_res = json_parser.parse(res.content)
-    
-    # Extract skills from the JSON output
-    job = json_res
-    if not json_res or not isinstance(json_res, list):
-        raise ValueError("Invalid JSON format or no data found.")
-    skills = json_res[0].get('skills', [])
-    return skills
-
-
 
 # FastAPI route to query the collection using a POST request
 @app.post("/search")
@@ -88,7 +58,7 @@ async def search(request: SearchRequest):
         {page_data}
         ### INSTRUCTION:
         This is a job description.
-        Your job is to extract the relevant skills mentioned in the job descriptions and return them in JSON format.
+        Your job is to extract the relevant skills, tools, technologies, softwares,etc... mentioned in the job descriptions and return them in JSON format.
         Each object in the JSON should have two keys: `role` and `skills`.
         Only return the valid JSON.
         ### VALID JSON (NO PREAMBLE):
@@ -203,3 +173,9 @@ async def view_all_documents(page: int = Query(1, ge=1), page_size: int = Query(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during document retrieval: {str(e)}")
+
+
+# FastAPI route to check if the API is live
+@app.get("/status")
+async def check_status():
+    return {"message": "It is live now"}
