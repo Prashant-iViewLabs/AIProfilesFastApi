@@ -31,20 +31,20 @@ if not collection.count():
             ids=[str(uuid.uuid4())]
         )
 
-# Pydantic model for the input data
+# # Pydantic model for the input data
 class SearchRequest(BaseModel):
     query_text: str
-class SkillsRequest(BaseModel):
-    skills: str  # List of skills in the request body
+# class SkillsRequest(BaseModel):
+#     skills: str  # List of skills in the request body
 
-class CRUDRequest(BaseModel):
-    techstack: str
-    links: str
+# class CRUDRequest(BaseModel):
+#     techstack: str
+#     links: str
 
-class UpdateRequest(BaseModel):
-    id: str
-    techstack: str
-    links: str
+# class UpdateRequest(BaseModel):
+#     id: str
+#     techstack: str
+#     links: str
 
 
 # FastAPI route to query the collection using a POST request
@@ -93,89 +93,91 @@ async def search(request: SearchRequest):
 
 
 
-# FastAPI route to add new data to the collection (optional)
-@app.post("/add")
-async def add_document(crud_request: CRUDRequest):
-    try:
-        new_id = str(uuid.uuid4())
-        collection.add(
-            documents=[crud_request.techstack],
-            metadatas={"links": crud_request.links},
-            ids=[new_id]
-        )
-        return {"message": "Document added", "id": new_id}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during adding document: {str(e)}")
+# # FastAPI route to add new data to the collection (optional)
+# @app.post("/add")
+# async def add_document(crud_request: CRUDRequest):
+#     try:
+#         new_id = str(uuid.uuid4())
+#         collection.add(
+#             documents=[crud_request.techstack],
+#             metadatas={"links": crud_request.links},
+#             ids=[new_id]
+#         )
+#         return {"message": "Document added", "id": new_id}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error during adding document: {str(e)}")
 
 
-# FastAPI route to view a document in the collection
-@app.get("/view/{id}")
-async def view_document(id: str):
-    try:
-        document = collection.get(ids=[id])
-        if not document:
-            raise HTTPException(status_code=404, detail="Document not found")
-        return document
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during document view: {str(e)}")
+# # FastAPI route to view a document in the collection
+# @app.get("/view/{id}")
+# async def view_document(id: str):
+#     try:
+#         document = collection.get(ids=[id])
+#         if not document:
+#             raise HTTPException(status_code=404, detail="Document not found")
+#         return document
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error during document view: {str(e)}")
 
 
-# FastAPI route to update a document in the collection
-@app.put("/update")
-async def update_document(update_request: UpdateRequest):
-    try:
-        collection.update(
-            documents=[update_request.techstack],
-            metadatas={"links": update_request.links},
-            ids=[update_request.id]
-        )
-        return {"message": "Document updated", "id": update_request.id}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during document update: {str(e)}")
+# # FastAPI route to update a document in the collection
+# @app.put("/update")
+# async def update_document(update_request: UpdateRequest):
+#     try:
+#         collection.update(
+#             documents=[update_request.techstack],
+#             metadatas={"links": update_request.links},
+#             ids=[update_request.id]
+#         )
+#         return {"message": "Document updated", "id": update_request.id}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error during document update: {str(e)}")
 
 
-# FastAPI route to delete a document from the collection
-@app.delete("/delete/{id}")
-async def delete_document(id: str):
-    try:
-        collection.delete(ids=[id])
-        return {"message": "Document deleted", "id": id}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during document deletion: {str(e)}")
+# # FastAPI route to delete a document from the collection
+# @app.delete("/delete/{id}")
+# async def delete_document(id: str):
+#     try:
+#         collection.delete(ids=[id])
+#         return {"message": "Document deleted", "id": id}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error during document deletion: {str(e)}")
 
 
-# FastAPI route to view all documents with pagination
-@app.get("/view_all")
-async def view_all_documents(page: int = Query(1, ge=1), page_size: int = Query(10, ge=1)):
-    try:
-        total_documents = collection.count()
-        total_pages = (total_documents + page_size - 1) // page_size  # Calculate total number of pages
+# # FastAPI route to view all documents with pagination
+# @app.get("/view_all")
+# async def view_all_documents(page: int = Query(1, ge=1), page_size: int = Query(10, ge=1)):
+#     try:
+#         total_documents = collection.count()
+#         total_pages = (total_documents + page_size - 1) // page_size  # Calculate total number of pages
 
-        if page > total_pages:
-            raise HTTPException(status_code=400, detail=f"Page {page} is out of range. Total pages: {total_pages}")
+#         if page > total_pages:
+#             raise HTTPException(status_code=400, detail=f"Page {page} is out of range. Total pages: {total_pages}")
 
-        # Calculate the start and end indices for pagination
-        start_idx = (page - 1) * page_size
-        end_idx = min(start_idx + page_size, total_documents)
+#         # Calculate the start and end indices for pagination
+#         start_idx = (page - 1) * page_size
+#         end_idx = min(start_idx + page_size, total_documents)
 
-        # Retrieve the documents from the collection
-        all_docs = collection.get(limit=page_size, offset=start_idx)
+#         # Retrieve the documents from the collection
+#         all_docs = collection.get(limit=page_size, offset=start_idx)
 
-        # If no documents found
-        if not all_docs:
-            raise HTTPException(status_code=404, detail="No documents found")
+#         # If no documents found
+#         if not all_docs:
+#             raise HTTPException(status_code=404, detail="No documents found")
 
-        return {
-            "page": page,
-            "total_pages": total_pages,
-            "total_documents": total_documents,
-            "documents": all_docs
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during document retrieval: {str(e)}")
+#         return {
+#             "page": page,
+#             "total_pages": total_pages,
+#             "total_documents": total_documents,
+#             "documents": all_docs
+#         }
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error during document retrieval: {str(e)}")
 
 
 # FastAPI route to check if the API is live
+
+@app.head("/status")
 @app.get("/status")
 async def check_status():
     return {"message": "It is live now"}
