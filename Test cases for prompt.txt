@@ -1,0 +1,28 @@
+Case 1: 
+I need a frontend developer with 5 years of exprience. Developer should be proficient in revelent skills required for this role also take experience into consideration
+
+Response: 
+{'role': 'Frontend Developer', 'skills': ['HTML', 'CSS', 'JavaScript', 'React', 'Angular', 'Vue.js', 'Bootstrap', 'Material-UI', 'Responsive Design', 'UI/UX'], 'Experience': 5}
+
+Case 2:
+I need a frontend developer with 5 years of exprience. Developer should be proficient in Next.js, React.js skills required for this role also take experience into consideration
+Response: 
+[{'role': 'Frontend Developer', 'skills': ['Next.js', 'React.js'], 'Experience': 5}]
+
+
+case 3:
+Experience: 3-5 years of experience with Odoo development.Skills Required: Proficiency in Odoo framework, Python, and knowledge of Odoo ERP modules.Role Requirements: The candidate should be capable of customizing Odoo modules, integrating third-party services, and ensuring seamless ERP functionality. 
+Response:
+[
+  [
+    {
+      "links": "/profile/094e5e78-f0c7-47a0-9cde-8df89542f02d"
+    },
+    {
+      "links": "/profile/309f1999-203c-4ef5-b0c4-8ceda7ae9369"
+    },
+    {
+      "links": "/profile/2ad32269-2c1c-4a78-a2c9-8395a45c8dad"
+    }
+  ]
+]

@@ -20,16 +20,17 @@ client = chromadb.PersistentClient('vectorstore')
 collection = client.get_or_create_collection(name="YPP-portfolio")
 
 # Load the CSV into a DataFrame (assuming it only needs to be loaded once)
-df = pd.read_csv("./Resources/profiles_techstack_-_resourcedata.csv")
+df = pd.read_csv("./Resources/ProfilesData.csv")
 
 # Populate the collection if it's empty
+
 if not collection.count():
     for _, row in df.iterrows():
-        collection.add(
-            documents=[row["Techstack"]],
-            metadatas={"links": row["Links"]},
-            ids=[str(uuid.uuid4())]
-        )
+        rowData = row["Role"],"proficient in ",row["Keywords"], "at",  row["Experience Level"], "level"
+        rowDataString = " ".join(map(str, rowData))
+        collection.add(documents=rowDataString,
+        metadatas={"links": row["ResourceData (Item)"]},
+        ids=[str(uuid.uuid4())])
 
 # # Pydantic model for the input data
 class SearchRequest(BaseModel):
@@ -57,9 +58,9 @@ async def search(request: SearchRequest):
         ### SCRAPED TEXT FROM WEBSITE:
         {page_data}
         ### INSTRUCTION:
-        This is a job description.
-        Your job is to extract the relevant skills, tools, technologies, softwares,etc... mentioned in the job descriptions and return them in JSON format.
-        Each object in the JSON should have two keys: `role` and `skills`.
+        This is a raw data provided by user.
+        Your job is to prepare a skillSet based on provided job description and return them in JSON format.
+        Each object in the JSON should have following keys: `role`, `skills`, `Experience` .
         Only return the valid JSON.
         ### VALID JSON (NO PREAMBLE):
         """
@@ -68,27 +69,12 @@ async def search(request: SearchRequest):
         res = chain_extract.invoke(input={'page_data':request.query_text})
         json_parser = JsonOutputParser()
         json_res = json_parser.parse(res.content)
-        jobs = json_res
-        # Initialize an empty list to store all skills
-        all_skills = []
-
-        # Extract skills from each job role
-        for job in jobs:
-            all_skills.extend(job['skills'])  # Combine skills from each job role
-
-        # Make the query using the list of skills
-        links = collection.query(query_texts=all_skills).get('metadatas', [])
-        # job['skills']
-        # Query using the list of skills
-        # links = collection.query(query_texts=job['skills'], n_results=2)
-
+        data = json_res[0]
+        result = f"{data['role']} with skills in {', '.join(data['skills'])} and {data['Experience']} years of experience."
+        links = collection.query(query_texts=result, n_results=3).get('metadatas', [])
         return links
-
-        # res = await extractSkillsfromParagraph(request.query_text)# Only take the first 10 skills
-        # print(res)
-        # links = collection.query(query_texts=res, n_results=2).get('metadatas', [])
-        # return {"links": links}
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=f"Error during link search: {str(e)}")
 
 
